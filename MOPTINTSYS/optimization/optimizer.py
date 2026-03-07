@@ -16,7 +16,7 @@ from pymoo.termination import get_termination
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-class ManufacturingProblem(Problem):
+class ManufacturingOptimizationProblem(Problem):
     def __init__(self, dt_model, bounds):
         """
         Defines the multi-objective optimization problem for PyMoo.
@@ -31,7 +31,10 @@ class ManufacturingProblem(Problem):
             'Compression_Force', 'Machine_Speed', 'Lubricant_Conc', 'Moisture_Content'
         ]
         
-        # 8 decision variables, 5 objectives (hardness, dissolution, friability, energy, carbon)
+        # Emission factor for calculating Carbon emissions from Energy
+        self.emission_factor = 0.45 
+        
+        # 8 decision variables, 5 objectives
         # Objectives are minimized by default in PyMoo.
         super().__init__(n_var=8, n_obj=5, n_ieq_constr=0, xl=bounds[0], xu=bounds[1])
 
@@ -47,6 +50,7 @@ class ManufacturingProblem(Problem):
         parameters_df = pd.DataFrame(x, columns=self.feature_names)
         
         # Predict outcomes using the Digital Twin model for the whole batch
+        # Assuming the model returns at least Hardness, Friability, Dissolution_Rate, Energy_per_batch
         predictions = self.dt_model.predict(parameters_df)
         
         # We need to compute 5 objectives for each sample.
@@ -55,13 +59,17 @@ class ManufacturingProblem(Problem):
         # 2. Maximize Dissolution_Rate -> Minimize (-Dissolution_Rate)
         # 3. Minimize Friability -> Minimize (Friability)
         # 4. Minimize Energy_per_batch -> Minimize (Energy_per_batch)
-        # 5. Minimize Carbon_emission -> Minimize (Carbon_emission)
+        # 5. Minimize Carbon_emissions -> Minimize (Energy_per_batch * emission_factor)
         
-        f1 = -np.array(predictions['Hardness'])
-        f2 = -np.array(predictions['Dissolution_Rate'])
-        f3 = np.array(predictions['Friability'])
-        f4 = np.array(predictions['Energy_per_batch'])
-        f5 = np.array(predictions['Carbon_emission'])
+        f1 = -np.array(predictions['Hardness'])            # Minimize negative Hardness
+        f2 = -np.array(predictions['Dissolution_Rate'])    # Minimize negative Dissolution
+        f3 = np.array(predictions['Friability'])           # Minimize Friability
+        f4 = np.array(predictions['Energy_per_batch'])     # Minimize Energy
+        
+        # Carbon = Energy_per_batch * emission_factor
+        # Note: Depending on the dt_model implementation, Carbon_emission might be predicted directly.
+        # Here we calculate it directly from Energy_per_batch as requested by the user.
+        f5 = f4 * self.emission_factor
         
         # Stack the objectives horizontally so the final shape is (n_samples, 5)
         out["F"] = np.column_stack([f1, f2, f3, f4, f5])
@@ -93,30 +101,40 @@ class ManufacturingOptimizer:
         parameters_df = pd.DataFrame([parameters_vector], columns=feature_names)
         predictions = self.dt_model.predict(parameters_df)
         
+        energy = predictions['Energy_per_batch'][0]
+        emission_factor = 0.45
+        
         outcomes = {
             'hardness': predictions['Hardness'][0],
             'friability': predictions['Friability'][0],
             'dissolution_rate': predictions['Dissolution_Rate'][0],
-            'energy': predictions['Energy_per_batch'][0],
-            'carbon': predictions['Carbon_emission'][0]
+            'energy': energy,
+            'carbon': energy * emission_factor
         }
         
         return outcomes
 
-    def optimize(self, bounds: tuple, pop_size: int = 100, n_gen: int = 50):
+    def optimize(self, bounds=None, pop_size: int = 100, n_gen: int = 50):
         """
         Runs the NSGA-II optimization algorithm.
         
         Args:
-            bounds (tuple): Tuple of two lists/arrays (lower_bounds, upper_bounds) for the 8 parameters.
+            bounds (tuple, optional): Tuple of two arrays (lower_bounds, upper_bounds). If None, realistic defaults are used.
             pop_size (int): Number of individuals in the population.
             n_gen (int): Number of generations to run the evolution.
             
         Returns:
             pd.DataFrame: A dataframe containing all optimal parameter sets and their predicted outcomes.
         """
+        # If bounds are not provided, we define realistic parameter bounds
+        if bounds is None:
+            # Order: Granulation_Time, Binder_Amount, Drying_Temp, Drying_Time, Compression_Force, Machine_Speed, Lubricant_Conc, Moisture_Content
+            xl = np.array([10.0, 1.0, 40.0, 20.0, 5.0, 10.0, 0.1, 1.0])
+            xu = np.array([60.0, 10.0, 80.0, 120.0, 30.0, 50.0, 2.0, 5.0])
+            bounds = (xl, xu)
+            
         logging.info("Step 1: Defining the PyMoo problem...")
-        problem = ManufacturingProblem(self.dt_model, bounds)
+        problem = ManufacturingOptimizationProblem(self.dt_model, bounds)
         
         logging.info("Step 2: Initializing NSGA-II algorithm...")
         algorithm = NSGA2(pop_size=pop_size)
@@ -159,3 +177,4 @@ class ManufacturingOptimizer:
         results_df['Predicted_Carbon'] = pareto_objectives[:, 4]
         
         return results_df
+

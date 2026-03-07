@@ -46,14 +46,14 @@ def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
         total_time_hours = total_time_mins / 60.0
         
         # Calculate Energy Consumption in kWh per batch
-        processed_df['Energy_Consumption_kWh'] = processed_df['Power_Consumption_kW'] * total_time_hours
+        processed_df['Energy_per_batch'] = processed_df['Power_Consumption_kW'] * total_time_hours
     
     # -------------------------------------------------------------------------
     # 2. Feature Engineering: Carbon Emissions
     # -------------------------------------------------------------------------
     # Carbon_Emission = Total Energy * Emission Factor
-    if 'Energy_Consumption_kWh' in processed_df.columns:
-        processed_df['Carbon_Emissions_kg'] = processed_df['Energy_Consumption_kWh'] * CARBON_EMISSION_FACTOR
+    if 'Energy_per_batch' in processed_df.columns:
+        processed_df['Carbon_emission'] = processed_df['Energy_per_batch'] * CARBON_EMISSION_FACTOR
         
     # -------------------------------------------------------------------------
     # 3. Additional Derived Features (Examples)

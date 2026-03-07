@@ -27,8 +27,15 @@ def load_manufacturing_data(batch_data_path: str, time_series_path: str) -> pd.D
     
     # 1. Load both datasets using pandas
     try:
-        batch_df = pd.read_csv(batch_data_path)
-        ts_df = pd.read_csv(time_series_path)
+        if batch_data_path.endswith('.csv'):
+            batch_df = pd.read_csv(batch_data_path)
+        else:
+            batch_df = pd.read_excel(batch_data_path)
+            
+        if time_series_path.endswith('.csv'):
+            ts_df = pd.read_csv(time_series_path)
+        else:
+            ts_df = pd.read_excel(time_series_path)
     except FileNotFoundError as e:
         logging.error(f"Data file not found: {e}")
         raise
@@ -48,7 +55,7 @@ def load_manufacturing_data(batch_data_path: str, time_series_path: str) -> pd.D
     # To merge it properly with fixed batch outcomes, we aggregate the sensors.
     # Here, we group by 'Batch_ID' and calculate the mean values for the sensors.
     logging.info("Aggregating time-series readings by Batch_ID (using average over time)...")
-    ts_agg_df = ts_df.groupby('Batch_ID').mean().reset_index()
+    ts_agg_df = ts_df.groupby('Batch_ID').mean(numeric_only=True).reset_index()
 
     # 3. Merge datasets using Batch_ID
     logging.info("Step 3: Merging datasets on 'Batch_ID'...")
