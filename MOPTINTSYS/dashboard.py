@@ -6,6 +6,10 @@ import plotly.graph_objects as go
 import os
 import uuid
 import json
+from utils.llm_helper import (
+    analyze_pareto_results, explain_golden_signature,
+    parse_operator_intent, analyze_batch_history, chat_with_optimfg
+)
 
 # Import components from the existing modules
 from data.data_loader import load_manufacturing_data
@@ -20,7 +24,7 @@ st.set_page_config(page_title="OptiMFG | AI Decision Platform", layout="wide")
 st.title("🏭 OptiMFG: Complete AI-Driven Manufacturing Decision Platform")
 
 # Multi-tab layout for complete features
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Optimization Dashboard", "Plant Configuration", "Batch History", "Golden Signatures Library", "What-If Simulation"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Optimization Dashboard", "Plant Configuration", "Batch History", "Golden Signatures Library", "What-If Simulation", "🤖 AI Chatbot"])
 
 # -----------------------------------------------------------------------------
 # TAB 1: OPTIMIZATION DASHBOARD (Batch Creation & Execution)
@@ -32,7 +36,43 @@ with tab1:
     """)
     
     st.sidebar.header("Section 1: Batch Setup & Constraints")
-    
+
+    # ── LLM Feature 3: Smart Decision Assistant ──────────────────────────
+    with st.sidebar.expander("🧠 Smart Assistant (AI Pre-fill)", expanded=False):
+        st.caption("Describe your batch goal in plain English — AI will suggest parameter values to fill the form below.")
+        assistant_input = st.text_area(
+            "Your goal:",
+            placeholder="e.g. High quality batch for an audit, energy is less important today",
+            key="assistant_input",
+            height=80,
+        )
+        if st.button("💡 Suggest Parameters", key="suggest_btn"):
+            if assistant_input.strip():
+                with st.spinner("Thinking..."):
+                    current_defaults = {
+                        "scenario": "Balanced",
+                        "target_quality": 0.40,
+                        "energy_limit": 180.0,
+                        "carbon_limit": 100.0,
+                        "pop_size": 50,
+                        "n_gen": 20,
+                    }
+                    suggestions = parse_operator_intent(assistant_input, current_defaults)
+                reasoning = suggestions.pop("reasoning", "")
+                if suggestions:
+                    st.success("AI Suggestions:")
+                    for k, v in suggestions.items():
+                        st.write(f"**{k.replace('_', ' ')}:** `{v}`")
+                    if reasoning:
+                        st.caption(f"*{reasoning}*")
+                    st.info("Apply these values in the form below ↓")
+                else:
+                    st.warning("Could not extract parameters. Try being more specific.")
+                    if reasoning:
+                        st.caption(reasoning)
+            else:
+                st.warning("Please describe your goal first.")
+
     with st.sidebar.form("batch_form"):
         batch_id = st.text_input("Batch ID", value=f"BATCH-{str(uuid.uuid4())[:6].upper()}")
         material_type = st.selectbox("Material Type", ["Standard Powder", "High Density", "Granular"])
@@ -122,123 +162,159 @@ with tab1:
                     "pareto_solutions_count": len(pareto_df)
                 }
                 save_batch_result(batch_result_record)
-                
-                st.divider()
-                
-                # Section 2: Recommendation Engine & Golden Signature
-                st.header("🏆 Recommended Golden Signature")
-                st.markdown(f"### Priority Mode: **{scenario}**")
-                
-                rc1, rc2 = st.columns(2)
-                with rc1:
-                    st.markdown("#### Exact Machine Parameters")
-                    params = main_recommendation["parameters"]
-                    st.code(f"""
-Drying Temperature: {params['Drying_Temp']:.1f}°C
-Compression Force: {params['Compression_Force']:.1f} kN
-Machine Speed: {params['Machine_Speed']:.1f} RPM
-Moisture Content: {params['Moisture_Content']:.2f}%
-Granulation Time: {params['Granulation_Time']:.1f} min
-Binder Amount: {params['Binder_Amount']:.1f} kg
-Drying Time: {params['Drying_Time']:.1f} min
-Lubricant Conc: {params['Lubricant_Conc']:.2f}%
-                    """)
-                    
-                with rc2:
-                    st.markdown("#### Predicted Outcomes")
-                    preds = main_recommendation["predictions"]
-                    
-                    # Highlight if constraints met
-                    q_icon = "✅" if preds['Quality_Score'] >= target_quality else "⚠️"
-                    e_icon = "✅" if preds['Energy_per_batch'] <= energy_limit else "⚠️"
-                    c_icon = "✅" if preds['Carbon_emission'] <= carbon_limit else "⚠️"
-                    
-                    st.code(f"""
-{q_icon} Quality Score: {preds['Quality_Score']:.3f} (Target: >{target_quality})
-{e_icon} Energy Consump: {preds['Energy_per_batch']:.2f} kWh (Limit: <{energy_limit})
-{c_icon} Carbon Emiss: {preds['Carbon_emission']:.2f} kg (Limit: <{carbon_limit})
-Reliability Score: {preds['Reliability_Index']:.3f}
-Asset Health: {preds.get('Asset_Health_Score', 1.0):.3f}
-Balanced Score: {preds['Balanced_Score']:.3f}
-                    """)
 
-                st.divider()
+                params = main_recommendation["parameters"]
+                preds  = main_recommendation["predictions"]
 
-                # Highlight coordinates for Golden point
-                golden_q = preds['Quality_Score']
-                golden_e = preds['Energy_per_batch']
-                golden_c = preds['Carbon_emission']
-                golden_r = preds['Reliability_Index']
-
-                # Section 3: Pareto Visualizations
-                st.header("📊 Tradeoff Visualizations")
-                
-                c1, c2, c3 = st.columns(3)
-                
-                with c1:
-                    fig1 = px.scatter(
-                        pareto_df, x='Predicted_Quality_Score', y='Predicted_Energy',
-                        hover_data=['Granulation_Time', 'Compression_Force'],
-                        title="Energy vs Quality",
-                        color_discrete_sequence=['#1f77b4']
-                    )
-                    fig1.add_trace(go.Scatter(x=[golden_q], y=[golden_e], mode='markers', marker=dict(size=14, color='red', symbol='star'), name='Golden Sig'))
-                    st.plotly_chart(fig1, use_container_width=True)
-                    
-                with c2:
-                    fig2 = px.scatter(
-                        pareto_df, x='Predicted_Quality_Score', y='Predicted_Carbon',
-                        hover_data=['Binder_Amount', 'Drying_Temp'],
-                        title="Carbon vs Quality",
-                        color_discrete_sequence=['#2ca02c']
-                    )
-                    fig2.add_trace(go.Scatter(x=[golden_q], y=[golden_c], mode='markers', marker=dict(size=14, color='red', symbol='star'), name='Golden Sig'))
-                    st.plotly_chart(fig2, use_container_width=True)
-                
-                with c3:
-                    fig3 = px.scatter(
-                        pareto_df, x='Predicted_Energy', y='Predicted_Reliability',
-                        hover_data=['Machine_Speed', 'Drying_Time'],
-                        title="Reliability vs Energy",
-                        color_discrete_sequence=['#ff7f0e']
-                    )
-                    fig3.add_trace(go.Scatter(x=[golden_e], y=[golden_r], mode='markers', marker=dict(size=14, color='red', symbol='star'), name='Golden Sig'))
-                    st.plotly_chart(fig3, use_container_width=True)
-
-                st.divider()
-
-                # Section 4: Decision Comparison
-                st.header("💡 Decision Comparison Panel")
-                st.markdown("Alternate Top Strategy Recommendations:")
-                
-                dc1, dc2, dc3 = st.columns(3)
-                with dc1:
-                    st.info("🌱 **Energy Efficient Alternative**")
-                    e_preds = energy_sig['predictions']
-                    st.markdown(f"Quality: **{e_preds['Quality_Score']:.3f}**\n\nEnergy: **{e_preds['Energy_per_batch']:.1f}** kWh\n\nAsset Health: **{e_preds.get('Asset_Health_Score', 1.0):.3f}**")
-                with dc2:
-                    st.success("⚖️ **Balanced Alternative**")
-                    b_preds = balanced_sig['predictions']
-                    st.markdown(f"Quality: **{b_preds['Quality_Score']:.3f}**\n\nEnergy: **{b_preds['Energy_per_batch']:.1f}** kWh\n\nAsset Health: **{b_preds.get('Asset_Health_Score', 1.0):.3f}**")
-                with dc3:
-                    st.warning("🏅 **Quality Maximizing Alternative**")
-                    q_preds = quality_sig['predictions']
-                    st.markdown(f"Quality: **{q_preds['Quality_Score']:.3f}**\n\nEnergy: **{q_preds['Energy_per_batch']:.1f}** kWh\n\nAsset Health: **{q_preds.get('Asset_Health_Score', 1.0):.3f}**")
-
-                st.divider()
-                st.header("📋 Full Pareto Output Table")
-                display_df = pareto_df.rename(columns={
-                    'Predicted_Quality_Score': 'Quality Score',
-                    'Predicted_Energy': 'Energy (kWh)',
-                    'Predicted_Carbon': 'Carbon (CO2)',
-                    'Predicted_Reliability': 'Reliability',
-                    'Asset_Health_Score': 'Asset Health',
-                    'Balanced_Score': 'Balanced Score'
+                # ── Store ALL results in session_state ──
+                # The display block outside `if submitted:` reads from here,
+                # so clicking any button won’t wipe the results.
+                st.session_state.update({
+                    "opt_pareto_df":      pareto_df.copy(),
+                    "opt_params":         params.copy(),
+                    "opt_preds":          preds.copy(),
+                    "opt_scenario":       scenario,
+                    "opt_target_quality": target_quality,
+                    "opt_energy_limit":   energy_limit,
+                    "opt_carbon_limit":   carbon_limit,
+                    "opt_energy_preds":   energy_sig["predictions"].copy(),
+                    "opt_quality_preds":  quality_sig["predictions"].copy(),
+                    "opt_balanced_preds": balanced_sig["predictions"].copy(),
                 })
-                st.dataframe(display_df)
-                    
+                for _k in ("llm_pareto_summary", "llm_explanation"):
+                    st.session_state.pop(_k, None)
+
             except Exception as e:
                 st.error(f"Error during optimization: {e}")
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # PERSISTENT RESULTS PANEL
+    # Rendered from session_state — survives ALL button clicks and reruns
+    # ──────────────────────────────────────────────────────────────────────────
+    if "opt_pareto_df" in st.session_state:
+        _pf  = st.session_state["opt_pareto_df"]
+        _sc  = st.session_state["opt_scenario"]
+        _par = st.session_state["opt_params"]
+        _pre = st.session_state["opt_preds"]
+        _tq  = st.session_state["opt_target_quality"]
+        _el  = st.session_state["opt_energy_limit"]
+        _cl  = st.session_state["opt_carbon_limit"]
+        _ep  = st.session_state["opt_energy_preds"]
+        _qp  = st.session_state["opt_quality_preds"]
+        _bp  = st.session_state["opt_balanced_preds"]
+
+        st.success(f"✅ Optimization complete! {len(_pf)} Pareto-optimal configurations found.")
+        st.divider()
+
+        # ── Section 2: Recommended Golden Signature ──
+        st.header("🏆 Recommended Golden Signature")
+        st.markdown(f"### Priority Mode: **{_sc}**")
+        rc1, rc2 = st.columns(2)
+        with rc1:
+            st.markdown("#### Exact Machine Parameters")
+            st.code(f"""
+Drying Temperature: {_par['Drying_Temp']:.1f}°C
+Compression Force: {_par['Compression_Force']:.1f} kN
+Machine Speed: {_par['Machine_Speed']:.1f} RPM
+Moisture Content: {_par['Moisture_Content']:.2f}%
+Granulation Time: {_par['Granulation_Time']:.1f} min
+Binder Amount: {_par['Binder_Amount']:.1f} kg
+Drying Time: {_par['Drying_Time']:.1f} min
+Lubricant Conc: {_par['Lubricant_Conc']:.2f}%
+            """)
+        with rc2:
+            st.markdown("#### Predicted Outcomes")
+            q_icon = "✅" if _pre["Quality_Score"] >= _tq else "⚠️"
+            e_icon = "✅" if _pre["Energy_per_batch"] <= _el else "⚠️"
+            c_icon = "✅" if _pre["Carbon_emission"] <= _cl else "⚠️"
+            st.code(f"""
+{q_icon} Quality Score: {_pre['Quality_Score']:.3f} (Target: >{_tq})
+{e_icon} Energy Consump: {_pre['Energy_per_batch']:.2f} kWh (Limit: <{_el})
+{c_icon} Carbon Emiss: {_pre['Carbon_emission']:.2f} kg (Limit: <{_cl})
+Reliability Score: {_pre['Reliability_Index']:.3f}
+Asset Health: {_pre.get('Asset_Health_Score', 1.0):.3f}
+Balanced Score: {_pre['Balanced_Score']:.3f}
+            """)
+
+        st.divider()
+
+        # ── Section 3: Pareto Visualizations ──
+        golden_q = _pre["Quality_Score"]
+        golden_e = _pre["Energy_per_batch"]
+        golden_c = _pre["Carbon_emission"]
+        golden_r = _pre["Reliability_Index"]
+        st.header("📊 Tradeoff Visualizations")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            fig1 = px.scatter(_pf, x="Predicted_Quality_Score", y="Predicted_Energy",
+                              hover_data=["Granulation_Time", "Compression_Force"],
+                              title="Energy vs Quality", color_discrete_sequence=["#1f77b4"])
+            fig1.add_trace(go.Scatter(x=[golden_q], y=[golden_e], mode="markers",
+                                      marker=dict(size=14, color="red", symbol="star"), name="Golden Sig"))
+            st.plotly_chart(fig1, use_container_width=True)
+        with c2:
+            fig2 = px.scatter(_pf, x="Predicted_Quality_Score", y="Predicted_Carbon",
+                              hover_data=["Binder_Amount", "Drying_Temp"],
+                              title="Carbon vs Quality", color_discrete_sequence=["#2ca02c"])
+            fig2.add_trace(go.Scatter(x=[golden_q], y=[golden_c], mode="markers",
+                                      marker=dict(size=14, color="red", symbol="star"), name="Golden Sig"))
+            st.plotly_chart(fig2, use_container_width=True)
+        with c3:
+            fig3 = px.scatter(_pf, x="Predicted_Energy", y="Predicted_Reliability",
+                              hover_data=["Machine_Speed", "Drying_Time"],
+                              title="Reliability vs Energy", color_discrete_sequence=["#ff7f0e"])
+            fig3.add_trace(go.Scatter(x=[golden_e], y=[golden_r], mode="markers",
+                                      marker=dict(size=14, color="red", symbol="star"), name="Golden Sig"))
+            st.plotly_chart(fig3, use_container_width=True)
+
+        st.divider()
+
+        # ── Section 4: Decision Comparison ──
+        st.header("💡 Decision Comparison Panel")
+        st.markdown("Alternate Top Strategy Recommendations:")
+        dc1, dc2, dc3 = st.columns(3)
+        with dc1:
+            st.info("🌱 **Energy Efficient Alternative**")
+            st.markdown(f"Quality: **{_ep['Quality_Score']:.3f}**\n\nEnergy: **{_ep['Energy_per_batch']:.1f}** kWh\n\nAsset Health: **{_ep.get('Asset_Health_Score', 1.0):.3f}**")
+        with dc2:
+            st.success("⚖️ **Balanced Alternative**")
+            st.markdown(f"Quality: **{_bp['Quality_Score']:.3f}**\n\nEnergy: **{_bp['Energy_per_batch']:.1f}** kWh\n\nAsset Health: **{_bp.get('Asset_Health_Score', 1.0):.3f}**")
+        with dc3:
+            st.warning("� **Quality Maximizing Alternative**")
+            st.markdown(f"Quality: **{_qp['Quality_Score']:.3f}**\n\nEnergy: **{_qp['Energy_per_batch']:.1f}** kWh\n\nAsset Health: **{_qp.get('Asset_Health_Score', 1.0):.3f}**")
+
+        st.divider()
+
+        # ── Section 5: Full Pareto Table ──
+        st.header("📋 Full Pareto Output Table")
+        st.dataframe(_pf.rename(columns={
+            "Predicted_Quality_Score": "Quality Score",
+            "Predicted_Energy": "Energy (kWh)",
+            "Predicted_Carbon": "Carbon (CO2)",
+            "Predicted_Reliability": "Reliability",
+            "Asset_Health_Score": "Asset Health",
+            "Balanced_Score": "Balanced Score",
+        }))
+
+        st.divider()
+
+        # ── LLM Feature 1: Pareto Analyst ──
+        with st.expander("🔍 AI: Pareto Analysis", expanded=False):
+            st.caption(f"AI-generated plain-English summary of all {len(_pf)} Pareto-optimal solutions.")
+            if st.button("Generate Pareto Analysis", key="pareto_analysis_btn"):
+                with st.spinner("Analyzing solutions..."):
+                    st.session_state["llm_pareto_summary"] = analyze_pareto_results(_pf, _sc)
+            if "llm_pareto_summary" in st.session_state:
+                st.markdown(st.session_state["llm_pareto_summary"])
+
+        # ── LLM Feature 2: Golden Signature Explainer ──
+        with st.expander("💬 AI: Why This Configuration?", expanded=False):
+            st.caption("AI explains why the Golden Signature parameters were selected for your batch.")
+            if st.button("Explain Recommendation", key="explain_btn"):
+                with st.spinner("Generating explanation..."):
+                    st.session_state["llm_explanation"] = explain_golden_signature(_par, _pre, _sc)
+            if "llm_explanation" in st.session_state:
+                st.markdown(st.session_state["llm_explanation"])
 
 # -----------------------------------------------------------------------------
 # TAB 2: PLANT CONFIGURATION
@@ -278,7 +354,16 @@ with tab2:
 with tab3:
     st.header("📚 Historical Batch Results")
     history = load_batch_history()
-    
+
+    # ── LLM Feature 4: Batch History Insights ───────────────────────────────
+    if len(history) > 0:
+        with st.expander(f"🤖 AI Insights on Batch History ({len(history)} records)", expanded=False):
+            st.caption("AI-generated pattern analysis and recommendations across your historical batch data.")
+            if st.button("Generate AI Insights", key="history_insights_btn"):
+                with st.spinner("Analyzing batch history..."):
+                    insights = analyze_batch_history(history)
+                st.markdown(insights)
+
     if len(history) == 0:
         st.info("No historical batches found. Run an optimization to populate results.")
     else:
@@ -338,7 +423,44 @@ with tab4:
 with tab5:
     st.header("🧪 What-If Simulation Mode")
     st.markdown("Manually explore the state space. Interactively adjust machine parameters to instantly view Digital Twin predicted outcomes without triggering an autonomous optimization process.")
-    
+
+    # ── LLM Feature 5: What-If Chat Assistant ───────────────────────────────
+    with st.expander("💬 Describe Parameter Changes (AI Assistant)", expanded=False):
+        st.caption("Describe what you want to change in plain English — AI will suggest exact slider values.")
+        whatif_query = st.text_input(
+            "Your request:",
+            placeholder="e.g. What if I increase compression force to 22 kN and dry at 70°C?",
+            key="whatif_query",
+        )
+        if st.button("Get AI Suggestion", key="whatif_btn"):
+            if whatif_query.strip():
+                with st.spinner("Interpreting your request..."):
+                    machine_defaults = {
+                        "Granulation_Time": 30.0,
+                        "Binder_Amount": 5.0,
+                        "Drying_Temp": 60.0,
+                        "Drying_Time": 60.0,
+                        "Compression_Force": 15.0,
+                        "Machine_Speed": 30.0,
+                        "Lubricant_Conc": 1.0,
+                        "Moisture_Content": 2.5,
+                    }
+                    result = parse_operator_intent(whatif_query, machine_defaults)
+                reasoning = result.pop("reasoning", "")
+                if result:
+                    st.success("💡 Suggested slider values (set your sliders accordingly):")
+                    cols = st.columns(2)
+                    for i, (k, v) in enumerate(result.items()):
+                        cols[i % 2].metric(k.replace("_", " "), v)
+                    if reasoning:
+                        st.caption(f"*{reasoning}*")
+                else:
+                    st.warning("Could not extract specific parameters. Try being more specific.")
+                    if reasoning:
+                        st.caption(reasoning)
+            else:
+                st.warning("Please describe your request first.")
+
     with st.form("what_if_form"):
         w1, w2 = st.columns(2)
         with w1:
@@ -390,3 +512,44 @@ with tab5:
                 
             except Exception as e:
                 st.error(f"Simulation failed: {e}")
+
+# -----------------------------------------------------------------------------
+# TAB 6: AI CHATBOT
+# -----------------------------------------------------------------------------
+with tab6:
+    st.header("🤖 OptiMFG AI Assistant")
+    st.markdown(
+        "Ask anything about manufacturing optimization, machine parameters, Pareto fronts, "
+        "Golden Signatures, or how to use this platform. The AI has full context of OptiMFG."
+    )
+
+    # Initialize chat history
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = []
+
+    # Display existing conversation
+    for msg in st.session_state.chat_messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # Chat input at the bottom
+    if user_input := st.chat_input("Ask anything about manufacturing optimization..."):
+        # Append and display user message
+        st.session_state.chat_messages.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+
+        # Generate and display AI response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                response = chat_with_optimfg(st.session_state.chat_messages)
+            st.markdown(response)
+
+        # Persist assistant response
+        st.session_state.chat_messages.append({"role": "assistant", "content": response})
+
+    # Clear button
+    if st.session_state.get("chat_messages"):
+        if st.button("🗑️ Clear Chat History", key="clear_chat_btn"):
+            st.session_state.chat_messages = []
+            st.rerun()
