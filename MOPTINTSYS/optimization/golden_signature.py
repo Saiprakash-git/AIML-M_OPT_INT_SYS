@@ -16,97 +16,58 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 # Define paths
 SIGNATURE_FILE = "golden_signature.json"
 
-def calculate_normalized_scores(pareto_df: pd.DataFrame, scenario: str) -> pd.Series:
-    """
-    Normalizes the objectives of the Pareto front and calculates a single 
-    performance score based on the chosen scenario weights.
-    Higher score is better.
-    """
-    df = pareto_df.copy()
-    
-    # 1. Normalize objectives between 0 and 1 for fair comparison
-    # For targets we want to MAXIMIZE, 1 is best.
-    # For targets we want to MINIMIZE, we invert them so 1 is still best.
-    
-    # Maximize objectives: (x - min) / (max - min) -> handle division by zero
-    for col in ['Predicted_Hardness', 'Predicted_Dissolution_Rate']:
-        min_val, max_val = df[col].min(), df[col].max()
-        if max_val > min_val:
-            df[col + '_norm'] = (df[col] - min_val) / (max_val - min_val)
-        else:
-            df[col + '_norm'] = 1.0
-            
-    # Minimize objectives: (max - x) / (max - min) -> inverted, so higher is better
-    for col in ['Predicted_Friability', 'Predicted_Energy', 'Predicted_Carbon']:
-        min_val, max_val = df[col].min(), df[col].max()
-        if max_val > min_val:
-            df[col + '_norm'] = (max_val - df[col]) / (max_val - min_val)
-        else:
-            df[col + '_norm'] = 1.0
-            
-    # 2. Assign scenario weights
-    # Structure: [Hardness, Dissolution, Friability, Energy, Carbon]
-    if scenario == "energy-saving":
-        weights = {'hardness': 0.1, 'dissolution': 0.1, 'friability': 0.1, 'energy': 0.35, 'carbon': 0.35}
-    elif scenario == "quality-priority":
-        weights = {'hardness': 0.3, 'dissolution': 0.4, 'friability': 0.2, 'energy': 0.05, 'carbon': 0.05}
-    else: # balanced
-        weights = {'hardness': 0.2, 'dissolution': 0.2, 'friability': 0.2, 'energy': 0.2, 'carbon': 0.2}
-        
-    # 3. Calculate weighted sum score
-    scores = (
-        df['Predicted_Hardness_norm'] * weights['hardness'] +
-        df['Predicted_Dissolution_Rate_norm'] * weights['dissolution'] +
-        df['Predicted_Friability_norm'] * weights['friability'] +
-        df['Predicted_Energy_norm'] * weights['energy'] +
-        df['Predicted_Carbon_norm'] * weights['carbon']
-    )
-    
-    return scores
-
 def select_golden_signature(pareto_df: pd.DataFrame, scenario: str = "balanced") -> dict:
     """
     Selects the best configuration from the Pareto front based on a chosen scenario.
     
     Args:
         pareto_df (pd.DataFrame): The optimal configurations from the optimizer.
-        scenario (str): Mode of selection ('energy-saving', 'quality-priority', 'balanced').
+        scenario (str): Mode of selection ('Energy Saving', 'Quality Priority', 'Balanced').
         
     Returns:
         dict: The selected Golden Signature configuration including parameters, predictions, and score.
     """
     logging.info(f"Selecting best Golden Signature for scenario: '{scenario}'")
     
-    # Calculate performance scores
-    scores = calculate_normalized_scores(pareto_df, scenario)
+    df = pareto_df.copy()
     
-    # Find the index of the highest score
-    best_idx = scores.idxmax()
-    best_score = scores.loc[best_idx]
+    # 1. Determine best index based on scenario
+    if scenario.lower().replace(" ", "-") == "energy-saving" or scenario == "Energy Saving" or scenario == "energy":
+        # Energy Mode: select solution with lowest energy
+        best_idx = df['Predicted_Energy'].idxmin()
+        best_score = -df.loc[best_idx, 'Predicted_Energy']  # Negative so 'higher is better' logic in update matches conceptually
+    elif scenario.lower().replace(" ", "-") == "quality-priority" or scenario == "Quality Priority" or scenario == "quality":
+        # Quality Mode: select solution with highest Quality_Score
+        best_idx = df['Predicted_Quality_Score'].idxmax()
+        best_score = df.loc[best_idx, 'Predicted_Quality_Score']
+    else: 
+        # Balanced Mode: select solution with highest Balanced_Score
+        best_idx = df['Balanced_Score'].idxmax()
+        best_score = df.loc[best_idx, 'Balanced_Score']
     
     # Extract the row as a dictionary
-    best_row = pareto_df.loc[best_idx].to_dict()
+    best_row = df.loc[best_idx].to_dict()
     
-    # Construct the final signature package
+    # Construct the final signature package matching user requested format
     signature = {
         "scenario": scenario,
-        "overall_score": round(best_score, 4),
+        "overall_score": float(best_score),
         "parameters": {
-            "Granulation_Time": best_row['Granulation_Time'],
-            "Binder_Amount": best_row['Binder_Amount'],
-            "Drying_Temp": best_row['Drying_Temp'],
-            "Drying_Time": best_row['Drying_Time'],
-            "Compression_Force": best_row['Compression_Force'],
-            "Machine_Speed": best_row['Machine_Speed'],
-            "Lubricant_Conc": best_row['Lubricant_Conc'],
-            "Moisture_Content": best_row['Moisture_Content']
+            "Granulation_Time": float(best_row['Granulation_Time']),
+            "Binder_Amount": float(best_row['Binder_Amount']),
+            "Drying_Temp": float(best_row['Drying_Temp']),
+            "Drying_Time": float(best_row['Drying_Time']),
+            "Compression_Force": float(best_row['Compression_Force']),
+            "Machine_Speed": float(best_row['Machine_Speed']),
+            "Lubricant_Conc": float(best_row['Lubricant_Conc']),
+            "Moisture_Content": float(best_row['Moisture_Content'])
         },
         "predictions": {
-            "Hardness": best_row['Predicted_Hardness'],
-            "Dissolution_Rate": best_row['Predicted_Dissolution_Rate'],
-            "Friability": best_row['Predicted_Friability'],
-            "Energy_per_batch": best_row['Predicted_Energy'],
-            "Carbon_emission": best_row['Predicted_Carbon']
+            "Quality_Score": float(best_row['Predicted_Quality_Score']),
+            "Energy_per_batch": float(best_row['Predicted_Energy']),
+            "Carbon_emission": float(best_row['Predicted_Carbon']),
+            "Reliability_Index": float(best_row['Predicted_Reliability']),
+            "Balanced_Score": float(best_row['Balanced_Score'])
         }
     }
     

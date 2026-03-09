@@ -35,11 +35,11 @@ class DigitalTwinModel:
         
         # Define the exact target outputs to predict
         self.output_targets = [
-            'Hardness',
-            'Friability',
-            'Dissolution_Rate',
+            'Quality_Score',
             'Energy_per_batch',
-            'Carbon_emission'
+            'Carbon_emission',
+            'Reliability_Index',
+            'Asset_Health_Score'
         ]
         
         # Initialize the base XGBoost regressor

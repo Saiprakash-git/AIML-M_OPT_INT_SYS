@@ -79,11 +79,40 @@ def load_manufacturing_data(batch_data_path: str, time_series_path: str) -> pd.D
         # Compute Energy per batch
         energy_per_batch = avg_power_kw * total_time_hours
         
+        # Compute variance for reliability calculation
+        # If there's only one row, variance will be NaN, so fill with 0
+        power_variance = ts_df['Power_Consumption_kW'].var() if len(ts_df) > 1 else 0
+        
+        temp_variance = 0
+        if 'Temperature_C' in ts_df.columns:
+            temp_variance = ts_df['Temperature_C'].var() if len(ts_df) > 1 else 0
+            
+        power_variance = 0 if pd.isna(power_variance) else power_variance
+        temp_variance = 0 if pd.isna(temp_variance) else temp_variance
+        
+        reliability_index = 1.0 / (1.0 + power_variance + temp_variance)
+
+        # Asset Health Monitoring via Isolation Forest (detects abnormal power patterns)
+        from sklearn.ensemble import IsolationForest
+        asset_health_score = 1.0
+        if len(ts_df) > 10:
+            # Need enough points to detect anomalies
+            power_data = ts_df[['Power_Consumption_kW']].fillna(0)
+            iso_forest = IsolationForest(contamination=0.05, random_state=42)
+            anomalies = iso_forest.fit_predict(power_data)
+            # -1 for anomalies, 1 for normal
+            anomaly_ratio = sum(1 for a in anomalies if a == -1) / len(anomalies)
+            asset_health_score = max(0.0, 1.0 - (anomaly_ratio * 5.0)) # Scale penalty 
+        
         # Create an aggregated record for this specific batch
         record = {
             'Batch_ID': batch_id,
             'Power_Consumption_kW': avg_power_kw,
-            'Energy_per_batch': energy_per_batch
+            'Energy_per_batch': energy_per_batch,
+            'Power_variance': power_variance,
+            'Temperature_variance': temp_variance,
+            'Reliability_Index': reliability_index,
+            'Asset_Health_Score': asset_health_score
         }
         
         # Add other sensor numeric averages (Temperature_C, Pressure_Bar, etc.)

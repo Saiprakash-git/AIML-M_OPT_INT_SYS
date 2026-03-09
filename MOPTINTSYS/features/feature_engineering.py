@@ -68,7 +68,35 @@ def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
         processed_df['Compression_Work_Proxy'] = processed_df['Compression_Force'] / (processed_df['Machine_Speed'] + 1e-6)
 
     # -------------------------------------------------------------------------
-    # 4. Data Scaling
+    # 4. Feature Engineering: Quality Score
+    # -------------------------------------------------------------------------
+    # Quality_Score = 0.4 * Hardness_norm + 0.4 * Dissolution_norm - 0.2 * Friability_norm
+    if all(col in processed_df.columns for col in ['Hardness', 'Dissolution_Rate', 'Friability']):
+        # Normalize between 0 and 1
+        hardness_min, hardness_max = processed_df['Hardness'].min(), processed_df['Hardness'].max()
+        diss_min, diss_max = processed_df['Dissolution_Rate'].min(), processed_df['Dissolution_Rate'].max()
+        friab_min, friab_max = processed_df['Friability'].min(), processed_df['Friability'].max()
+        
+        # Avoid division by zero by using max checks
+        if hardness_max > hardness_min:
+            h_norm = (processed_df['Hardness'] - hardness_min) / (hardness_max - hardness_min)
+        else:
+            h_norm = 0.5
+            
+        if diss_max > diss_min:
+            d_norm = (processed_df['Dissolution_Rate'] - diss_min) / (diss_max - diss_min)
+        else:
+            d_norm = 0.5
+            
+        if friab_max > friab_min:
+            f_norm = (processed_df['Friability'] - friab_min) / (friab_max - friab_min)
+        else:
+            f_norm = 0.5
+            
+        processed_df['Quality_Score'] = 0.4 * h_norm + 0.4 * d_norm - 0.2 * f_norm
+    
+    # -------------------------------------------------------------------------
+    # 5. Data Scaling
     # -------------------------------------------------------------------------
     # Note: Target columns (outcomes) usually aren't scaled prior to train-test splits 
     # unless necessary for specific algorithms. We keep this simple and return the complete dataframe.
