@@ -33,9 +33,8 @@ def preprocess_features(df: pd.DataFrame) -> pd.DataFrame:
     # 1. Feature Engineering: Total Energy Consumption
     # -------------------------------------------------------------------------
     # Energy = Power * Time. 
-    # We estimate total process time using the available time parameters.
-    # Assuming 'Granulation_Time' and 'Drying_Time' are in minutes.
-    if 'Power_Consumption_kW' in processed_df.columns:
+    # If not already computed by the data loader, we estimate it.
+    if 'Energy_per_batch' not in processed_df.columns and 'Power_Consumption_kW' in processed_df.columns:
         total_time_mins = 0
         if 'Granulation_Time' in processed_df.columns:
             total_time_mins += processed_df['Granulation_Time']
