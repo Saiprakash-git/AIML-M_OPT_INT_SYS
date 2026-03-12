@@ -250,5 +250,61 @@
             "Balanced_Score": -23.16331784129143
         },
         "pareto_solutions_count": 50
+    },
+    {
+        "batch_id": "BATCH-6CD7EA",
+        "material_type": "Standard Powder",
+        "optimization_mode": "Balanced",
+        "targets_used": {
+            "energy_limit": 180.0,
+            "carbon_limit": 100.0,
+            "target_quality": 0.4
+        },
+        "recommended_configuration": {
+            "Granulation_Time": 12.2806477986626,
+            "Binder_Amount": 5.74642010440216,
+            "Drying_Temp": 46.12240895793868,
+            "Drying_Time": 52.31077071749549,
+            "Compression_Force": 16.267068735139837,
+            "Machine_Speed": 19.75423307811787,
+            "Lubricant_Conc": 0.687366468475799,
+            "Moisture_Content": 4.303123469723145
+        },
+        "predicted_outcomes": {
+            "Quality_Score": 0.4085235893726349,
+            "Energy_per_batch": 81.2822036743164,
+            "Carbon_emission": 36.577003479003906,
+            "Reliability_Index": 0.0022728624753654003,
+            "Balanced_Score": -23.16331784129143
+        },
+        "pareto_solutions_count": 50
+    },
+    {
+        "batch_id": "BATCH-ED0608",
+        "material_type": "Standard Powder",
+        "optimization_mode": "Balanced",
+        "targets_used": {
+            "energy_limit": 180.0,
+            "carbon_limit": 100.0,
+            "target_quality": 0.4
+        },
+        "recommended_configuration": {
+            "Granulation_Time": 12.2806477986626,
+            "Binder_Amount": 5.74642010440216,
+            "Drying_Temp": 46.12240895793868,
+            "Drying_Time": 52.31077071749549,
+            "Compression_Force": 16.267068735139837,
+            "Machine_Speed": 19.75423307811787,
+            "Lubricant_Conc": 0.687366468475799,
+            "Moisture_Content": 4.303123469723145
+        },
+        "predicted_outcomes": {
+            "Quality_Score": 0.4085235893726349,
+            "Energy_per_batch": 81.2822036743164,
+            "Carbon_emission": 36.577003479003906,
+            "Reliability_Index": 0.0022728624753654003,
+            "Balanced_Score": -23.16331784129143
+        },
+        "pareto_solutions_count": 50
     }
 ]

@@ -26,10 +26,21 @@ from utils.storage import (
     save_operator_preferences
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="OptiMFG API",
     description="AI-driven Manufacturing Optimization Engine",
     version="2.0.0"
+)
+
+# Add CORS so your external frontend web app can access this API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to specific URLs in production (e.g. ["http://localhost:3000"])
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # -----------------------------------------------------------------------------
