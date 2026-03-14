@@ -24,7 +24,7 @@ st.set_page_config(page_title="OptiMFG | AI Decision Platform", layout="wide")
 st.title("🏭 OptiMFG: Complete AI-Driven Manufacturing Decision Platform")
 
 # Multi-tab layout for complete features
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Optimization Dashboard", "Plant Configuration", "Batch History", "Golden Signatures Library", "What-If Simulation", "🤖 AI Chatbot"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Optimization Dashboard", "Plant Configuration", "Batch History", "Golden Signatures Library", "What-If Simulation", "🤖 AI Chatbot", "📊 Model Stats"])
 
 # -----------------------------------------------------------------------------
 # TAB 1: OPTIMIZATION DASHBOARD (Batch Creation & Execution)
@@ -553,3 +553,156 @@ with tab6:
         if st.button("🗑️ Clear Chat History", key="clear_chat_btn"):
             st.session_state.chat_messages = []
             st.rerun()
+
+# -----------------------------------------------------------------------------
+# TAB 7: MODEL STATISTICS
+# -----------------------------------------------------------------------------
+with tab7:
+    st.header("📊 Digital Twin Model Performance")
+    st.markdown("""
+    This tab displays the accuracy and performance metrics of the Digital Twin model 
+    used for predicting manufacturing outcomes. Lower MAE and RMSE values indicate better model performance.
+    """)
+    
+    # Try to load model metrics from the results folder
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    metrics_file = os.path.join(script_dir, "results", "model_metrics.json")
+    
+    if os.path.exists(metrics_file):
+        try:
+            with open(metrics_file, "r") as f:
+                model_metrics = json.load(f)
+            
+            st.success("✅ Model metrics loaded successfully")
+            st.markdown("---")
+            
+            # Display metrics by target
+            st.subheader("Performance Metrics by Target Variable")
+            
+            # Create columns for each metric
+            target_cols = st.columns(len(model_metrics))
+            
+            for idx, (target, metrics) in enumerate(model_metrics.items()):
+                with target_cols[idx]:
+                    st.markdown(f"### {target.replace('_', ' ')}")
+                    st.metric("MAE (Mean Absolute Error)", f"{metrics['MAE']:.4f}")
+                    st.metric("RMSE (Root Mean Squared Error)", f"{metrics['RMSE']:.4f}")
+            
+            st.markdown("---")
+            
+            # Create a summary table
+            st.subheader("Summary Table")
+            metrics_data = []
+            for target, metrics in model_metrics.items():
+                metrics_data.append({
+                    "Target Variable": target.replace('_', ' '),
+                    "MAE": f"{metrics['MAE']:.4f}",
+                    "RMSE": f"{metrics['RMSE']:.4f}"
+                })
+            
+            metrics_df = pd.DataFrame(metrics_data)
+            st.dataframe(metrics_df, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Visualization of metrics
+            st.subheader("Visual Comparison")
+            
+            mae_values = [metrics['MAE'] for metrics in model_metrics.values()]
+            rmse_values = [metrics['RMSE'] for metrics in model_metrics.values()]
+            target_names = [target.replace('_', ' ') for target in model_metrics.keys()]
+            
+            # Create a bar chart comparing MAE and RMSE
+            fig = go.Figure(data=[
+                go.Bar(name='MAE', x=target_names, y=mae_values, marker_color='lightblue'),
+                go.Bar(name='RMSE', x=target_names, y=rmse_values, marker_color='lightcoral')
+            ])
+            
+            fig.update_layout(
+                title="Model Error Metrics by Target",
+                xaxis_title="Target Variable",
+                yaxis_title="Error Value",
+                barmode='group',
+                height=500,
+                showlegend=True
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Model Info and Interpretation
+            st.subheader("Model Information")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.info("""
+                **Model Type:** MultiOutput XGBoost Regressor
+                
+                **Input Features (8):**
+                - Granulation Time
+                - Binder Amount
+                - Drying Temperature
+                - Drying Time
+                - Compression Force
+                - Machine Speed
+                - Lubricant Concentration
+                - Moisture Content
+                """)
+            
+            with col2:
+                st.info("""
+                **Target Variables (5):**
+                - Quality Score
+                - Energy per Batch
+                - Carbon Emission
+                - Reliability Index
+                - Asset Health Score
+                
+                **Hyperparameters:**
+                - Estimators: 100
+                - Learning Rate: 0.1
+                - Max Depth: 5
+                """)
+            
+            st.markdown("---")
+            
+            # Interpretation guide
+            st.subheader("How to Interpret These Metrics")
+            st.markdown("""
+            - **MAE (Mean Absolute Error):** Average absolute difference between predicted and actual values.
+              Lower values indicate more accurate predictions.
+            
+            - **RMSE (Root Mean Squared Error):** Square root of average squared differences. 
+              Penalizes larger errors more heavily than MAE. Lower values are better.
+            
+            - **Ratio RMSE/MAE:** Values closer to 1.0 indicate consistent error distribution.
+              Larger ratios suggest the model has some outlier prediction errors.
+            """)
+            
+            # Calculate and display RMSE/MAE ratios
+            st.subheader("Error Consistency Analysis")
+            consistency_data = []
+            for target, metrics in model_metrics.items():
+                ratio = metrics['RMSE'] / metrics['MAE'] if metrics['MAE'] > 0 else 0
+                consistency_data.append({
+                    "Target": target.replace('_', ' '),
+                    "RMSE/MAE Ratio": f"{ratio:.4f}",
+                    "Assessment": "Good" if 1.0 <= ratio <= 1.5 else "Acceptable" if 1.5 < ratio <= 2.0 else "Check for Outliers"
+                })
+            
+            consistency_df = pd.DataFrame(consistency_data)
+            st.dataframe(consistency_df, use_container_width=True)
+            
+        except Exception as e:
+            st.error(f"Error loading model metrics: {e}")
+            st.info("Run the optimization pipeline first to generate model metrics.")
+    else:
+        st.warning("📋 Model metrics not found")
+        st.info("""
+        To view model performance statistics:
+        1. Go to the **Optimization Dashboard** tab
+        2. Click **Run Target-Driven Optimization**
+        3. This will generate the model metrics file
+        4. Return to this tab to view the statistics
+        """)
