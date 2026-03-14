@@ -200,7 +200,7 @@ export default function WhatIfSimulationView() {
           <div className="kpi-grid" style={{ marginBottom: 24 }}>
             <div className="kpi-card quality">
               <div className="kpi-label">Quality Score</div>
-              <div className="kpi-value quality" style={{ color: 'var(--accent4)' }}>{(results.Quality_Score ?? 0).toFixed(4)}</div>
+              <div className="kpi-value quality" style={{ color: 'var(--accent4)' }}>{((results.Quality_Score ?? 0) * 100).toFixed(2)}%</div>
             </div>
             <div className="kpi-card energy">
               <div className="kpi-label">Energy / Batch</div>
@@ -212,13 +212,13 @@ export default function WhatIfSimulationView() {
             </div>
             <div className="kpi-card health">
               <div className="kpi-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{healthIcon} Asset Health</div>
-              <div className="kpi-value health" style={{ color: healthColor }}>{healthScore.toFixed(3)}</div>
+              <div className="kpi-value health" style={{ color: healthColor }}>{(healthScore * 100).toFixed(2)}%</div>
             </div>
           </div>
           {results.Reliability_Index !== undefined && (
             <div style={{ fontSize: 13, color: 'var(--muted)', borderTop: '1px solid var(--border)', paddingTop: 16, display: 'flex', gap: 32 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                Reliability Index: <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--warn)', fontWeight: 600 }}>{results.Reliability_Index.toFixed(4)}</span>
+                Reliability Index: <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--warn)', fontWeight: 600 }}>{(results.Reliability_Index * 100).toFixed(2)}%</span>
               </span>
               {results.Balanced_Score !== undefined && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

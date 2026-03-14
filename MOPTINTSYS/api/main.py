@@ -44,10 +44,14 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# Allow React dev server (and any origin in dev mode)
+# Set up origins for Render / Cloud deployment
+# In your Render dashboard environment variables, you will set FRONTEND_URL=https://your-vercel-app.vercel.app
+frontend_url = os.getenv("FRONTEND_URL", "*")
+origins = [frontend_url] if frontend_url != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -152,6 +156,16 @@ def get_batch_history():
 def optimize_process(request: OptimizationRequest):
     if optimizer is None:
         raise HTTPException(status_code=500, detail="Optimizer is not initialized. Ensure models are trained.")
+        
+    plant_config = load_plant_config()
+    if request.targets:
+        energy_req = request.targets.get('energy_limit')
+        if energy_req is not None and energy_req > plant_config.get('electricity_capacity_kw', float('inf')):
+            raise HTTPException(status_code=400, detail=f"Energy limit ({energy_req} kWh) exceeds global plant configuration ({plant_config.get('electricity_capacity_kw', 'N/A')} kWh). Please upgrade the plant capacity or lower the request.")
+
+        carbon_req = request.targets.get('carbon_limit')
+        if carbon_req is not None and carbon_req > plant_config.get('carbon_emission_limit_kg', float('inf')):
+            raise HTTPException(status_code=400, detail=f"Carbon limit ({carbon_req} kg) exceeds global plant configuration ({plant_config.get('carbon_emission_limit_kg', 'N/A')} kg). Please upgrade the plant capacity or lower the request.")
 
     lower_bounds, upper_bounds = [], []
     order = [

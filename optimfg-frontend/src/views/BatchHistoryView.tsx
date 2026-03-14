@@ -134,12 +134,12 @@ export default function BatchHistoryView() {
                         <td>{modeTag(b.optimization_mode)}</td>
                         <td style={{ color: 'var(--text2)', fontWeight: 500 }}>{b.material_type ?? 'N/A'}</td>
                         <td className="mono" style={{ color: hasOutcomes ? 'var(--warn)' : 'var(--muted)', fontWeight: 600 }}>
-                          {hasOutcomes ? (p.Quality_Score ?? 0).toFixed(4) : '—'}
+                          {hasOutcomes ? ((p.Quality_Score ?? 0) * 100).toFixed(2) + '%' : '—'}
                         </td>
                         <td className="mono" style={{ fontWeight: 500 }}>{hasOutcomes ? (p.Energy_per_batch ?? 0).toFixed(2) : '—'}</td>
                         <td className="mono" style={{ fontWeight: 500 }}>{hasOutcomes ? (p.Carbon_emission ?? 0).toFixed(2) : '—'}</td>
                         <td className="mono" style={{ color: (p.Asset_Health_Score ?? 1) > 0.9 ? 'var(--success)' : 'var(--warn)', fontWeight: 600 }}>
-                          {hasOutcomes ? (p.Asset_Health_Score ?? 1).toFixed(3) : '—'}
+                          {hasOutcomes ? ((p.Asset_Health_Score ?? 1) * 100).toFixed(2) + '%' : '—'}
                         </td>
                         <td>
                           <span className="tag" style={{

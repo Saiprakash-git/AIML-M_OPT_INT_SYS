@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../api';
 import type { OptimizationResult, ParetoSolution, RecommendedConfig, PredictedOutcomes } from '../types';
@@ -22,7 +22,7 @@ function ParetoTooltip({ active, payload }: { active?: boolean; payload?: any[] 
   return (
     <div className="custom-tooltip">
       <div className="ct-label">Pareto Point</div>
-      <div className="ct-item"><span style={{ color: 'var(--muted)' }}>Quality:</span> <span style={{ color: 'var(--accent4)' }}>{(d.Predicted_Quality_Score ?? 0).toFixed(4)}</span></div>
+      <div className="ct-item"><span style={{ color: 'var(--muted)' }}>Quality:</span> <span style={{ color: 'var(--accent4)' }}>{((d.Predicted_Quality_Score ?? 0) * 100).toFixed(2)}%</span></div>
       <div className="ct-item"><span style={{ color: 'var(--muted)' }}>Energy:</span> <span style={{ color: 'var(--accent)' }}>{(d.Predicted_Energy ?? 0).toFixed(2)} kWh</span></div>
       <div className="ct-item"><span style={{ color: 'var(--muted)' }}>Carbon:</span> <span style={{ color: 'var(--success)' }}>{(d.Predicted_Carbon ?? 0).toFixed(2)} kg</span></div>
     </div>
@@ -97,10 +97,10 @@ function DecisionCard({ title, borderColor, preds, targets, isRecommended, stars
       </div>
       <div style={{ marginTop: 12 }}>
         {[
-          { label: 'Quality', val: q.toFixed(4), ok: q >= targets.quality, color: 'var(--accent4)' },
+          { label: 'Quality', val: `${(q * 100).toFixed(1)}%`, ok: q >= targets.quality, color: 'var(--accent4)' },
           { label: 'Energy', val: `${e.toFixed(1)} kWh`, ok: e <= targets.energy, color: 'var(--accent)' },
           { label: 'Carbon', val: `${c.toFixed(1)} kg`, ok: c <= targets.carbon, color: 'var(--accent2)' },
-          { label: 'Asset Health', val: h.toFixed(3), ok: h > 0.8, color: '#8B5CF6' },
+          { label: 'Asset Health', val: `${(h * 100).toFixed(1)}%`, ok: h > 0.8, color: '#8B5CF6' },
         ].map(row => (
           <div className="dec-metric" key={row.label}>
             <span style={{ color: 'var(--muted)' }}>{row.label}</span>
@@ -133,6 +133,11 @@ export default function OptimizationDashboard() {
   const [pareto, setPareto] = useState<ParetoSolution[]>([]);
   const [altPreds, setAltPreds] = useState<{ energy: Partial<PredictedOutcomes>; balanced: Partial<PredictedOutcomes>; quality: Partial<PredictedOutcomes> } | null>(null);
   const [aiRec, setAiRec] = useState<AiRec | null>(null);
+  const [plantConfig, setPlantConfig] = useState<any>(null);
+
+  useEffect(() => {
+    api.getPlantConfig().then(cfg => setPlantConfig(cfg)).catch(console.error);
+  }, []);
 
   // AI panels
   const [paretoAnalysis, setParetoAnalysis] = useState('');
@@ -149,6 +154,17 @@ export default function OptimizationDashboard() {
   const [showAssistant, setShowAssistant] = useState(false);
 
   const runOptimize = async () => {
+    if (plantConfig) {
+      if (energyLimit > (plantConfig.electricity_capacity_kw || Infinity)) {
+        setError(`Energy limit (${energyLimit} kWh) exceeds the global plant capacity (${plantConfig.electricity_capacity_kw} kWh).`);
+        return;
+      }
+      if (carbonLimit > (plantConfig.carbon_emission_limit_kg || Infinity)) {
+        setError(`Carbon limit (${carbonLimit} kg) exceeds the global plant capacity (${plantConfig.carbon_emission_limit_kg} kg).`);
+        return;
+      }
+    }
+
     setLoading(true); setError(''); setResult(null); setPareto([]);
     setParetoAnalysis(''); setExplanation(''); setSuggestions(null);
     try {
@@ -341,12 +357,12 @@ export default function OptimizationDashboard() {
           <div>
             <div className="form-group">
               <label className="form-label">
-                Target Quality Score (min): {targetQuality.toFixed(2)}
+                Target Quality Score (min): {(targetQuality * 100).toFixed(0)}%
                 <FieldTooltip text="Minimum acceptable quality score. The AI will reject any parameters predicting lower." />
               </label>
               <div className="range-wrap">
                 <input type="range" className="range-input" min={0} max={1} step={0.01} value={targetQuality} onChange={e => setTargetQuality(parseFloat(e.target.value))} />
-                <span className="range-val">{targetQuality.toFixed(2)}</span>
+                <span className="range-val">{(targetQuality * 100).toFixed(0)}%</span>
               </div>
             </div>
             <div className="form-group" style={{ background: scenario === 'Energy Saving' ? 'var(--surface-hover)' : 'transparent', padding: scenario === 'Energy Saving' ? '8px' : '0', borderRadius: '8px', transition: 'all 0.3s' }}>
@@ -417,16 +433,16 @@ export default function OptimizationDashboard() {
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>Predicted Outcomes</div>
                 <div className="code-block" style={{ borderLeft: '3px solid var(--accent2)' }}>
                   {[
-                    [pre.Quality_Score >= targetQuality ? <CheckCircle size={14} color="var(--success)"/> : <AlertTriangle size={14} color="var(--warn)"/>, `Quality Score: ${pre.Quality_Score?.toFixed(4)} (Target: ≥${targetQuality})`],
+                    [pre.Quality_Score >= targetQuality ? <CheckCircle size={14} color="var(--success)"/> : <AlertTriangle size={14} color="var(--warn)"/>, `Quality Score: ${(pre.Quality_Score * 100).toFixed(2)}% (Target: ≥${(targetQuality * 100).toFixed(0)}%)`],
                     [pre.Energy_per_batch <= energyLimit ? <CheckCircle size={14} color="var(--success)"/> : <AlertTriangle size={14} color="var(--warn)"/>, `Energy Consump: ${pre.Energy_per_batch?.toFixed(2)} kWh (Limit: <${energyLimit})`],
                     [pre.Carbon_emission <= carbonLimit ? <CheckCircle size={14} color="var(--success)"/> : <AlertTriangle size={14} color="var(--warn)"/>, `Carbon Emiss: ${pre.Carbon_emission?.toFixed(2)} kg (Limit: <${carbonLimit})`],
-                    [<Activity size={14} color="var(--accent)"/>, `Reliability Score: ${pre.Reliability_Index?.toFixed(4)}`],
-                    [<Wrench size={14} color="#8B5CF6"/>, `Asset Health: ${(pre.Asset_Health_Score ?? 1)?.toFixed(4)}`],
+                    [<Activity size={14} color="var(--accent)"/>, `Reliability Score: ${(pre.Reliability_Index * 100).toFixed(2)}%`],
+                    [<Wrench size={14} color="#8B5CF6"/>, `Asset Health: ${((pre.Asset_Health_Score ?? 1) * 100).toFixed(2)}%`],
                     [<Scale size={14} color="var(--accent2)"/>, `Balanced Score: ${pre.Balanced_Score?.toFixed(4)}`],
                     [<Target size={14} color="var(--text)"/>, `Fitness Score: ${result.overall_fitness_score?.toFixed(4)}`],
                   ].map(([icon, txt], i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, lineHeight: 1 }}>
-                      {icon} <span>{txt}</span>
+                      {icon} <span>{String(txt)}</span>
                     </div>
                   ))}
                 </div>
@@ -440,8 +456,8 @@ export default function OptimizationDashboard() {
               <div className="card-title"><BarChart2 size={16} color="var(--accent)"/> Tradeoff Visualizations — Pareto Front ({pareto.length} solutions)</div>
               <div className="grid-3">
                 {[
-                  { title: 'Energy vs Quality', xKey: 'Predicted_Quality_Score', yKey: 'Predicted_Energy', xLabel: 'Quality Score', yLabel: 'Energy (kWh)', color: 'var(--accent)', goldenX: pre.Quality_Score, goldenY: pre.Energy_per_batch },
-                  { title: 'Carbon vs Quality', xKey: 'Predicted_Quality_Score', yKey: 'Predicted_Carbon', xLabel: 'Quality Score', yLabel: 'Carbon (kg)', color: 'var(--success)', goldenX: pre.Quality_Score, goldenY: pre.Carbon_emission },
+                  { title: 'Energy vs Quality', xKey: 'Predicted_Quality_Score', yKey: 'Predicted_Energy', xLabel: 'Quality Score (idx)', yLabel: 'Energy (kWh)', color: 'var(--accent)', goldenX: pre.Quality_Score, goldenY: pre.Energy_per_batch },
+                  { title: 'Carbon vs Quality', xKey: 'Predicted_Quality_Score', yKey: 'Predicted_Carbon', xLabel: 'Quality Score (idx)', yLabel: 'Carbon (kg)', color: 'var(--success)', goldenX: pre.Quality_Score, goldenY: pre.Carbon_emission },
                   { title: 'Reliability vs Energy', xKey: 'Predicted_Energy', yKey: 'Predicted_Reliability', xLabel: 'Energy (kWh)', yLabel: 'Reliability', color: 'var(--warn)', goldenX: pre.Energy_per_batch, goldenY: pre.Reliability_Index },
                 ].map(chart => (
                   <div key={chart.title}>
@@ -505,12 +521,12 @@ export default function OptimizationDashboard() {
                     {pareto.map((s, i) => (
                       <tr key={i}>
                         <td className="mono" style={{ color: 'var(--muted)' }}>{i + 1}</td>
-                        <td className="mono" style={{ color: 'var(--accent4)' }}>{(s.Predicted_Quality_Score ?? 0).toFixed(4)}</td>
+                        <td className="mono" style={{ color: 'var(--accent4)' }}>{((s.Predicted_Quality_Score ?? 0) * 100).toFixed(2)}%</td>
                         <td className="mono">{(s.Predicted_Energy ?? 0).toFixed(2)}</td>
                         <td className="mono">{(s.Predicted_Carbon ?? 0).toFixed(2)}</td>
-                        <td className="mono" style={{ color: 'var(--warn)' }}>{(s.Predicted_Reliability ?? 0).toFixed(4)}</td>
+                        <td className="mono" style={{ color: 'var(--warn)' }}>{((s.Predicted_Reliability ?? 0) * 100).toFixed(2)}%</td>
                         <td className="mono" style={{ color: (s.Asset_Health_Score ?? 1) > 0.9 ? 'var(--success)' : 'var(--accent)' }}>
-                          {(s.Asset_Health_Score ?? 1).toFixed(3)}
+                          {((s.Asset_Health_Score ?? 1) * 100).toFixed(2)}%
                         </td>
                       </tr>
                     ))}

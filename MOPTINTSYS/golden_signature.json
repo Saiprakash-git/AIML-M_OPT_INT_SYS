@@ -1,47 +1,47 @@
 {
     "Balanced": {
         "scenario": "Balanced",
-        "overall_score": -21.016690444946292,
+        "overall_score": -20.980806213617328,
         "parameters": {
-            "Granulation_Time": 12.480464243681654,
-            "Binder_Amount": 2.1140136695388176,
-            "Drying_Temp": 70.17135601538179,
-            "Drying_Time": 21.130820363861528,
-            "Compression_Force": 16.06631153546233,
-            "Machine_Speed": 37.87294197986143,
-            "Lubricant_Conc": 1.5805608639190165,
-            "Moisture_Content": 1.429052867588728
+            "Granulation_Time": 12.586916922300563,
+            "Binder_Amount": 5.058582237106241,
+            "Drying_Temp": 66.72425333612608,
+            "Drying_Time": 21.837038127915505,
+            "Compression_Force": 16.471185668166687,
+            "Machine_Speed": 19.907199044357547,
+            "Lubricant_Conc": 1.635632973415781,
+            "Moisture_Content": 1.0449666341775998
         },
         "predictions": {
-            "Quality_Score": 0.4227619171142578,
-            "Energy_per_batch": 73.92914581298828,
-            "Carbon_emission": 33.26811599731445,
+            "Quality_Score": 0.40302786231040955,
+            "Energy_per_batch": 73.73735809326172,
+            "Carbon_emission": 33.18181228637695,
             "Reliability_Index": 0.0022728624753654003,
-            "Balanced_Score": -21.016690444946292
+            "Balanced_Score": -20.980806213617328
         },
-        "batch_context": "BATCH-JUPL6Q"
+        "batch_context": "BATCH-UP7O6N"
     },
     "Energy Saving": {
         "scenario": "Energy Saving",
-        "overall_score": -73.92914581298828,
+        "overall_score": -73.73735809326172,
         "parameters": {
-            "Granulation_Time": 12.274090449939838,
-            "Binder_Amount": 3.224666253054757,
-            "Drying_Temp": 75.1372425017972,
-            "Drying_Time": 23.364829240567552,
-            "Compression_Force": 16.074457648447158,
-            "Machine_Speed": 37.37965226261683,
-            "Lubricant_Conc": 1.771631610479063,
-            "Moisture_Content": 1.4990339172501652
+            "Granulation_Time": 12.038757077738197,
+            "Binder_Amount": 5.639491261315989,
+            "Drying_Temp": 66.6140523693135,
+            "Drying_Time": 21.713684631192258,
+            "Compression_Force": 17.743680537433157,
+            "Machine_Speed": 19.062955692325833,
+            "Lubricant_Conc": 1.3333080972919404,
+            "Moisture_Content": 1.7207843259247375
         },
         "predictions": {
-            "Quality_Score": 0.4227619171142578,
-            "Energy_per_batch": 73.92914581298828,
-            "Carbon_emission": 33.26811599731445,
+            "Quality_Score": 0.4025649130344391,
+            "Energy_per_batch": 73.73735809326172,
+            "Carbon_emission": 33.18181228637695,
             "Reliability_Index": 0.0022728624753654003,
-            "Balanced_Score": -21.016690444946292
+            "Balanced_Score": -20.981269162893298
         },
-        "batch_context": "BATCH-JUPL6Q"
+        "batch_context": "BATCH-UP7O6N-E"
     },
     "Quality Priority": {
         "scenario": "Quality Priority",
