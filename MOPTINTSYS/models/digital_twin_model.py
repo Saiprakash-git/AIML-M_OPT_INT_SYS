@@ -54,6 +54,9 @@ class DigitalTwinModel:
         
         # Wrap it in a MultiOutputRegressor to predict multiple targets simultaneously
         self.model = MultiOutputRegressor(xgb)
+        
+        # Store model performance metrics
+        self.metrics = {}
 
     def train(self, df: pd.DataFrame, model_save_path: str = 'models/digital_twin.pkl'):
         """
@@ -94,12 +97,22 @@ class DigitalTwinModel:
         logging.info("Evaluating model performance...")
         y_pred = self.model.predict(X)
         
+        metrics = {}
         # y_pred is an array of shape (n_samples, n_targets). We evaluate each target.
         for i, target in enumerate(self.output_targets):
             mae = mean_absolute_error(y_true[target], y_pred[:, i])
             rmse = np.sqrt(mean_squared_error(y_true[target], y_pred[:, i]))
             
+            metrics[target] = {
+                'MAE': float(mae),
+                'RMSE': float(rmse)
+            }
+            
             logging.info(f"Target: {target} | MAE: {mae:.4f} | RMSE: {rmse:.4f}")
+        
+        # Store metrics for later access
+        self.metrics = metrics
+        return metrics
 
     def load_model(self, model_path: str = 'models/digital_twin.pkl'):
         """

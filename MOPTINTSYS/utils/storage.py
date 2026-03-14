@@ -1,8 +1,12 @@
 import json
 import os
 
-PLANT_CONFIG_FILE = "plant_config.json"
-BATCH_HISTORY_FILE = "batch_history.json"
+# Always resolve files relative to this file's directory (MOPTINTSYS root)
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+PLANT_CONFIG_FILE = os.path.join(_BASE_DIR, "plant_config.json")
+BATCH_HISTORY_FILE = os.path.join(_BASE_DIR, "batch_history.json")
+
 
 def save_plant_config(config: dict):
     with open(PLANT_CONFIG_FILE, 'w') as f:
@@ -39,7 +43,7 @@ def load_batch_history() -> list:
                 pass
     return []
 
-PREFERENCES_FILE = "operator_preferences.json"
+PREFERENCES_FILE = os.path.join(_BASE_DIR, "operator_preferences.json")
 
 def save_operator_preferences(prefs: dict):
     with open(PREFERENCES_FILE, 'w') as f:

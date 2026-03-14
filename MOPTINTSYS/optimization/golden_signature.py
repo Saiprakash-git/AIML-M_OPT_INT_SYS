@@ -32,11 +32,12 @@ def select_golden_signature(pareto_df: pd.DataFrame, scenario: str = "balanced")
     df = pareto_df.copy()
     
     # 1. Determine best index based on scenario
-    if scenario.lower().replace(" ", "-") == "energy-saving" or scenario == "Energy Saving" or scenario == "energy":
+    scenario_clean = scenario.lower().replace(" ", "-")
+    if scenario_clean in ["energy-saving", "energy", "eco"]:
         # Energy Mode: select solution with lowest energy
         best_idx = df['Predicted_Energy'].idxmin()
         best_score = -df.loc[best_idx, 'Predicted_Energy']  # Negative so 'higher is better' logic in update matches conceptually
-    elif scenario.lower().replace(" ", "-") == "quality-priority" or scenario == "Quality Priority" or scenario == "quality":
+    elif scenario_clean in ["quality-priority", "quality"]:
         # Quality Mode: select solution with highest Quality_Score
         best_idx = df['Predicted_Quality_Score'].idxmax()
         best_score = df.loc[best_idx, 'Predicted_Quality_Score']
