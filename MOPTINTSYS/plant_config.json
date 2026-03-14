@@ -1,0 +1,8 @@
+{
+    "electricity_capacity_kw": 1000.0,
+    "machine_power_limit_kw": 500.0,
+    "emission_factor": 0.45,
+    "carbon_emission_limit_kg": 200.0,
+    "default_machine_configuration": "Standard",
+    "plant_operating_constraints": "None"
+}

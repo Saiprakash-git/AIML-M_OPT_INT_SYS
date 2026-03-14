@@ -34,6 +34,12 @@ def main():
     dt_model = DigitalTwinModel()
     dt_model.train(processed_data, model_save_path="models/digital_twin.pkl")
     
+    # Save model metrics to JSON for dashboard access
+    import json
+    os.makedirs("results", exist_ok=True)
+    with open("results/model_metrics.json", "w") as f:
+        json.dump(dt_model.metrics, f, indent=2)
+    
     # Step 3: Multi-Objective Optimization
     print("3. Running NSGA-II Optimizer...")
     optimizer = ManufacturingOptimizer(dt_model)
