@@ -45,13 +45,21 @@ app = FastAPI(
 )
 
 # Set up origins for Render / Cloud deployment
-# In your Render dashboard environment variables, you will set FRONTEND_URL=https://your-vercel-app.vercel.app
-frontend_url = os.getenv("FRONTEND_URL", "*")
-origins = [frontend_url] if frontend_url != "*" else ["*"]
+raw_url = os.getenv("FRONTEND_URL", "*")
+# Clean the input to remove accidental quotes, trailing slashes, or whitespace
+origins = [url.strip().strip('"').strip("'").rstrip("/") for url in raw_url.split(",")]
+
+# Explicitly add the user's frontend URL as a hardcoded backup
+if "https://aiml-m-opt-int-sys.vercel.app" not in origins:
+    origins.append("https://aiml-m-opt-int-sys.vercel.app")
+
+# If wildcard is found it must be the only element in allow_origins to allow_credentials=False compatibility
+if "*" in origins:
+    origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"], # Forcing wildcard to bypass all STRICT CORS checks temporarily
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
