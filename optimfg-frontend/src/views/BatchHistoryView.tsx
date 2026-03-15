@@ -51,27 +51,28 @@ export default function BatchHistoryView() {
   };
 
   return (
-    <div style={{ position: 'relative' }}>
-      <HelpDialog title="Batch History Guide">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <p><strong>What is this page?</strong></p>
-          <p>This page acts as the system of record for all past optimization runs. Every time you optimize a batch on the Dashboard, the chosen configuration and its predicted results are logged here.</p>
-          <p><strong>How to use it:</strong></p>
-          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <li><strong>Review Past Runs:</strong> Scroll through the table to see the Quality, Energy, and Carbon metrics achieved by previous batches.</li>
-            <li><strong>AI Insights:</strong> If you have multiple records, click the "AI Insights" panel at the top. The AI will analyze the entire history table to find trends (e.g., "Quality drops when moisture is too high").</li>
-            <li><strong>Continuous Learning:</strong> This data feeds back into the AI models (viewable on the Model Stats page) to improve future predictions.</li>
-          </ul>
-        </div>
-      </HelpDialog>
-
+    <div>
       <div className="flex-between mb">
         <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>
           {loading ? 'Loading...' : `${history.length} record${history.length !== 1 ? 's' : ''} found`}
         </span>
-        <button className="btn btn-muted btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={load} disabled={loading}>
-          <RefreshCw size={14} className={loading ? "spinner" : ""} /> Refresh
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-muted btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={load} disabled={loading}>
+            <RefreshCw size={14} className={loading ? "spinner" : ""} /> Refresh
+          </button>
+          <HelpDialog title="Batch History Guide" style={{ position: 'static' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p><strong>What is this page?</strong></p>
+              <p>This page acts as the system of record for all past optimization runs. Every time you optimize a batch on the Dashboard, the chosen configuration and its predicted results are logged here.</p>
+              <p><strong>How to use it:</strong></p>
+              <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <li><strong>Review Past Runs:</strong> Scroll through the table to see the Quality, Energy, and Carbon metrics achieved by previous batches.</li>
+                <li><strong>AI Insights:</strong> If you have multiple records, click the "AI Insights" panel at the top. The AI will analyze the entire history table to find trends (e.g., "Quality drops when moisture is too high").</li>
+                <li><strong>Continuous Learning:</strong> This data feeds back into the AI models (viewable on the Model Stats page) to improve future predictions.</li>
+              </ul>
+            </div>
+          </HelpDialog>
+        </div>
       </div>
 
       {error && <div className="alert alert-danger"><AlertCircle size={18} /> {error}</div>}

@@ -4,9 +4,10 @@ import { useState, type ReactNode } from 'react';
 interface HelpDialogProps {
   title: string;
   children: ReactNode;
+  style?: React.CSSProperties;
 }
 
-export default function HelpDialog({ title, children }: HelpDialogProps) {
+export default function HelpDialog({ title, children, style }: HelpDialogProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -21,7 +22,8 @@ export default function HelpDialog({ title, children }: HelpDialogProps) {
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
-          gap: '6px'
+          gap: '6px',
+          ...style
         }}
         title="Page Help"
       >
