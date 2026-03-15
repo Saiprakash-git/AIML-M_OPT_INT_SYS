@@ -608,4 +608,57 @@ export const css = `
 
   /* AI prose */
   .ai-prose { font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    .app {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      width: 100%;
+      min-width: 100%;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo, .sidebar-footer {
+      display: none;
+    }
+
+    .nav {
+      flex-direction: row;
+      overflow-x: auto;
+      padding: 12px;
+    }
+
+    .nav-item {
+      white-space: nowrap;
+    }
+
+    .topbar {
+      padding: 0 16px;
+    }
+
+    .topbar-meta {
+      display: none;
+    }
+
+    .content {
+      padding: 16px;
+    }
+
+    .kpi-grid, .grid-2, .grid-3, .grid-2-1, .dec-cards, .params-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .chat-input-row {
+      flex-wrap: wrap;
+    }
+
+    .chat-input {
+      width: 100%;
+    }
+  }
 `;

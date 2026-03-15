@@ -62,31 +62,6 @@ export default function AIChatbotView() {
             Golden Signatures, or current plant state. The AI has access to <strong style={{ color: 'var(--accent)' }}>live data</strong> from your system.
           </p>
 
-          {/* ── Pre-prompt chips ── */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {PRE_PROMPTS.map((p, i) => (
-              <button
-                key={i}
-                className="btn btn-muted"
-                style={{
-                  fontSize: 12, padding: '8px 16px',
-                  background: 'var(--surface2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text2)',
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  transition: 'all .15s',
-                  borderRadius: 20,
-                  boxShadow: 'none'
-                }}
-                onClick={() => send(p.prompt)}
-                disabled={loading}
-                title={p.prompt}
-              >
-                <span style={{ color: 'var(--accent)' }}>{p.icon}</span>
-                <span style={{ fontWeight: 500 }}>{p.label}</span>
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* ── Chat messages ── */}
@@ -127,7 +102,35 @@ export default function AIChatbotView() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="chat-input-row" style={{ padding: '20px 24px', background: 'var(--surface)' }}>
+          {/* ── Pre-prompt chips (Moved below chat history, above input) ── */}
+          {messages.length === 0 && (
+            <div style={{ padding: '0 24px 16px', display: 'flex', gap: 10, flexWrap: 'wrap', background: 'var(--bg)' }}>
+              {PRE_PROMPTS.map((p, i) => (
+                <button
+                  key={i}
+                  className="btn btn-muted"
+                  style={{
+                    fontSize: 12, padding: '8px 16px',
+                    background: 'var(--surface2)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text2)',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    transition: 'all .15s',
+                    borderRadius: 20,
+                    boxShadow: 'none'
+                  }}
+                  onClick={() => send(p.prompt)}
+                  disabled={loading}
+                  title={p.prompt}
+                >
+                  <span style={{ color: 'var(--accent)' }}>{p.icon}</span>
+                  <span style={{ fontWeight: 500 }}>{p.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="chat-input-row" style={{ padding: '20px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
             {messages.length > 0 && (
               <button
                 className="btn btn-muted"
