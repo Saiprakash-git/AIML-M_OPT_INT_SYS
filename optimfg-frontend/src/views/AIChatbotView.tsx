@@ -3,6 +3,7 @@ import { api } from '../api';
 import type { ChatMessage } from '../types';
 import { BarChart2, Zap, Trophy, Bot, User, Trash2, Send, MessageSquare } from 'lucide-react';
 import FieldTooltip from '../components/InfoTooltip';
+import HelpDialog from '../components/HelpDialog';
 
 const PRE_PROMPTS: { label: string; icon: React.ReactNode; prompt: string }[] = [
   {
@@ -50,7 +51,20 @@ export default function AIChatbotView() {
   };
 
   return (
-    <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <HelpDialog title="AI Chatbot Guide">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p><strong>What is this page?</strong></p>
+          <p>This is a conversational interface connected directly to your plant's Digital Twin, Batch History, and Golden Signatures. It acts as an expert data analyst.</p>
+          <p><strong>How to use it:</strong></p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <li><strong>Ask Questions:</strong> Type questions in plain English like "What was my most energy efficient batch?" or "Why did quality drop yesterday?".</li>
+            <li><strong>Pre-prompts:</strong> Use the suggestion chips above the chat box to quickly ask common complex questions.</li>
+            <li><strong>Live Data:</strong> The AI actually reads your live database to answer, so its insights are always up to date with your latest optimizations.</li>
+          </ul>
+        </div>
+      </HelpDialog>
+
       <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '24px 24px 16px', borderBottom: '1px solid var(--border)' }}>
           <div className="card-title" style={{ marginBottom: 8, display: 'flex', alignItems: 'center' }}>

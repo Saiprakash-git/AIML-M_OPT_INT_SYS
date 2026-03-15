@@ -8,6 +8,7 @@ import {
   Settings2, Scale, Trophy, Wrench, Search, MessageCircle, Factory, Target, Sparkles
 } from 'lucide-react';
 import FieldTooltip from '../components/InfoTooltip';
+import HelpDialog from '../components/HelpDialog';
 
 interface AiRec {
   recommended: string;
@@ -256,7 +257,22 @@ export default function OptimizationDashboard() {
   };
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      <HelpDialog title="Optimization Dashboard Guide">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p><strong>What is this page?</strong></p>
+          <p>This is the core engine of OptiMFG. It uses an AI Digital Twin and the NSGA-II evolutionary algorithm to find the best possible machine parameters for your next manufacturing batch.</p>
+          <p><strong>How to use it:</strong></p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <li><strong>Batch Setup:</strong> Choose your material type, batch size, and the priority (e.g., Energy Saving vs. Quality).</li>
+            <li><strong>Set Limits:</strong> Adjust your minimum acceptable Quality Score and absolute maximums for Energy and Carbon.</li>
+            <li><strong>AI Pre-fill:</strong> If you're unsure, open the "Smart Assistant" panel and type your goal in plain English (e.g., "I need a fast test batch").</li>
+            <li><strong>Run Optimization:</strong> Click the blue "Run Target-Driven Optimization" button. The AI will simulate thousands of combinations.</li>
+            <li><strong>Review Results:</strong> Once complete, the AI will recommend a "Golden Signature". You can view alternative strategies in the Decision Comparison panel, or inspect every single tradeoff point in the visual Pareto charts and table.</li>
+          </ul>
+        </div>
+      </HelpDialog>
+
       {error && <div className="alert alert-danger"><AlertTriangle size={18}/> {error}</div>}
 
       {/* Smart AI Assistant */}
@@ -505,37 +521,6 @@ export default function OptimizationDashboard() {
             </div>
           )}
 
-          {/* Full Pareto Table */}
-          {pareto.length > 0 && (
-            <div className="card mb">
-              <div className="card-title"><BarChart2 size={16} color="var(--muted)"/> Full Pareto Output Table ({pareto.length} solutions)</div>
-              <div className="table-wrap">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>#</th><th>Quality Score</th><th>Energy (kWh)</th>
-                      <th>Carbon (CO₂)</th><th>Reliability</th><th>Asset Health</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pareto.map((s, i) => (
-                      <tr key={i}>
-                        <td className="mono" style={{ color: 'var(--muted)' }}>{i + 1}</td>
-                        <td className="mono" style={{ color: 'var(--accent4)' }}>{((s.Predicted_Quality_Score ?? 0) * 100).toFixed(2)}%</td>
-                        <td className="mono">{(s.Predicted_Energy ?? 0).toFixed(2)}</td>
-                        <td className="mono">{(s.Predicted_Carbon ?? 0).toFixed(2)}</td>
-                        <td className="mono" style={{ color: 'var(--warn)' }}>{((s.Predicted_Reliability ?? 0) * 100).toFixed(2)}%</td>
-                        <td className="mono" style={{ color: (s.Asset_Health_Score ?? 1) > 0.9 ? 'var(--success)' : 'var(--accent)' }}>
-                          {((s.Asset_Health_Score ?? 1) * 100).toFixed(2)}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
           {/* AI Pareto Analysis */}
           <div className="expander mb">
             <div className="expander-header" onClick={() => setShowParetoPanel(e => !e)}>
@@ -587,6 +572,37 @@ export default function OptimizationDashboard() {
               </div>
             )}
           </div>
+
+          {/* Full Pareto Table */}
+          {pareto.length > 0 && (
+            <div className="card mb">
+              <div className="card-title"><BarChart2 size={16} color="var(--muted)"/> Full Pareto Output Table ({pareto.length} solutions)</div>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>#</th><th>Quality Score</th><th>Energy (kWh)</th>
+                      <th>Carbon (CO₂)</th><th>Reliability</th><th>Asset Health</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pareto.map((s, i) => (
+                      <tr key={i}>
+                        <td className="mono" style={{ color: 'var(--muted)' }}>{i + 1}</td>
+                        <td className="mono" style={{ color: 'var(--accent4)' }}>{((s.Predicted_Quality_Score ?? 0) * 100).toFixed(2)}%</td>
+                        <td className="mono">{(s.Predicted_Energy ?? 0).toFixed(2)}</td>
+                        <td className="mono">{(s.Predicted_Carbon ?? 0).toFixed(2)}</td>
+                        <td className="mono" style={{ color: 'var(--warn)' }}>{((s.Predicted_Reliability ?? 0) * 100).toFixed(2)}%</td>
+                        <td className="mono" style={{ color: (s.Asset_Health_Score ?? 1) > 0.9 ? 'var(--success)' : 'var(--accent)' }}>
+                          {((s.Asset_Health_Score ?? 1) * 100).toFixed(2)}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
 

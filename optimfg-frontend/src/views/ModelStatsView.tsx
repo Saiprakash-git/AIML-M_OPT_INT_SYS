@@ -4,6 +4,7 @@ import { api } from '../api';
 import type { ModelMetrics } from '../types';
 import { CheckCircle, BarChart2, ClipboardList } from 'lucide-react';
 import FieldTooltip from '../components/InfoTooltip';
+import HelpDialog from '../components/HelpDialog';
 
 export default function ModelStatsView() {
   const [metrics, setMetrics] = useState<ModelMetrics | null>(null);
@@ -56,7 +57,21 @@ export default function ModelStatsView() {
   });
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      <HelpDialog title="Model Statistics Guide">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p><strong>What is this page?</strong></p>
+          <p>This page displays the mathematical health and accuracy of the AI models powering the system (the "Digital Twin"). The AI uses an XGBoost supervised learning algorithm to make predictions.</p>
+          <p><strong>How to read these metrics:</strong></p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <li><strong>MAE (Mean Absolute Error):</strong> The average difference between what the AI predicted and the real-world result. Lower is better.</li>
+            <li><strong>RMSE (Root Mean Square Error):</strong> Similar to MAE, but punishes the AI heavily for making massive mistakes. Lower is better.</li>
+            <li><strong>Error Consistency:</strong> If RMSE is much larger than MAE, it means the model is generally accurate but sometimes makes huge mistakes (outliers).</li>
+            <li><strong>Improvement:</strong> These models learn continuously. Running more batches from the Dashboard will provide more training data and lower these error rates over time.</li>
+          </ul>
+        </div>
+      </HelpDialog>
+
       <div className="alert alert-success mb"><CheckCircle size={18} /> Model metrics loaded successfully</div>
 
       {/* KPI cards */}

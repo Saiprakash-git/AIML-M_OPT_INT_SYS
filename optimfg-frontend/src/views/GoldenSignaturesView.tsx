@@ -3,6 +3,7 @@ import { api } from '../api';
 import type { GoldenSignatureMap, GoldenSignature } from '../types';
 import { Sparkles, RefreshCw, Info, Trophy, Activity, LayoutGrid, Award, Settings2 } from 'lucide-react';
 import FieldTooltip from '../components/InfoTooltip';
+import HelpDialog from '../components/HelpDialog';
 
 const SCENARIO_COLORS: Record<string, string> = {
   'Energy Saving': 'var(--accent)',
@@ -112,7 +113,20 @@ export default function GoldenSignaturesView() {
   const entries = sigs ? Object.entries(sigs) : [];
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      <HelpDialog title="Golden Signatures Guide">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p><strong>What is this page?</strong></p>
+          <p>A Golden Signature is the absolute best set of machine parameters ever discovered by the AI for a specific goal (Energy, Quality, or Balanced). This page acts as your "Hall of Fame" library.</p>
+          <p><strong>How to use it:</strong></p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <li><strong>Reference Best Practices:</strong> Use these values as a starting point for manual machine setup if the AI is offline.</li>
+            <li><strong>Continuous Improvement:</strong> The system automatically overwrites a signature if a future batch achieves a higher "Fitness Score" for that category.</li>
+            <li><strong>Compare Strategies:</strong> Quickly glance at the difference in predicted outcomes (like Carbon Emission vs. Quality) between an Energy Saving signature and a Quality Priority signature.</li>
+          </ul>
+        </div>
+      </HelpDialog>
+
       <div className="flex-between mb">
         <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500, display: 'flex', alignItems: 'center' }}>
           {entries.length} strategy signature{entries.length !== 1 ? 's' : ''} stored

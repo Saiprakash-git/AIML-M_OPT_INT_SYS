@@ -5,6 +5,7 @@ import {
   AlertTriangle, Brain, Settings2, Sparkles, Activity
 } from 'lucide-react';
 import FieldTooltip from '../components/InfoTooltip';
+import HelpDialog from '../components/HelpDialog';
 
 interface Params {
   Granulation_Time: number;
@@ -92,7 +93,20 @@ export default function WhatIfSimulationView() {
   const healthIcon = healthScore > 0.9 ? <CheckCircle size={24} color="var(--success)" /> : healthScore > 0.7 ? <AlertTriangle size={24} color="var(--warn)" /> : <AlertTriangle size={24} color="var(--danger)" />;
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      <HelpDialog title="What-If Simulation Guide">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p><strong>What is this page?</strong></p>
+          <p>This is a manual testing ground for the AI Digital Twin. Instead of the AI finding the best parameters for you, you provide the parameters, and the AI predicts the exact outcome.</p>
+          <p><strong>How to use it:</strong></p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <li><strong>Manual Sliders:</strong> Adjust the 8 machine parameters using the sliders below.</li>
+            <li><strong>AI Suggestions:</strong> Not sure what to test? Ask the AI Assistant at the top (e.g., "What happens if I increase the drying temperature?"). It will give you recommended slider values to try.</li>
+            <li><strong>Simulate:</strong> Click "Run Digital Twin Simulation". The system will use its XGBoost models to predict the Quality, Energy, Carbon, and Machine Health for those specific settings without touching the real equipment.</li>
+          </ul>
+        </div>
+      </HelpDialog>
+
       {/* AI Assistant expander */}
       <div className="expander mb">
         <div className="expander-header" onClick={() => setExpanded(e => !e)}>

@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html, Environment, ContactShadows, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { Activity, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import HelpDialog from '../components/HelpDialog';
 
 // --- Sub-components for the 3D Scene ---
 
@@ -175,7 +176,20 @@ export default function DigitalTwinView() {
   }, []);
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+      <HelpDialog title="Live Digital Twin Guide">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p><strong>What is this page?</strong></p>
+          <p>This is a real-time, 3D spatial visualization of the physical manufacturing equipment. It is fed by live IoT sensor data (simulated for this demo).</p>
+          <p><strong>How to use it:</strong></p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <li><strong>Interact:</strong> You can click and drag to rotate the 3D model, scroll to zoom in/out, and right-click to pan around.</li>
+            <li><strong>Monitor Alerts:</strong> Watch the floating data overlays. If a critical parameter (like Core Temperature) exceeds safe limits, the overlay will turn red and the reactor core will visually glow red to indicate overheating.</li>
+            <li><strong>Data Sync:</strong> The "Connection" badge in the top right confirms that the WebSockets are actively streaming data with low latency.</li>
+          </ul>
+        </div>
+      </HelpDialog>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text)', margin: '0 0 8px 0' }}>Live Digital Twin</h2>
