@@ -3,6 +3,7 @@ import { api } from '../api';
 import type { PlantConfig } from '../types';
 import { Settings, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import InfoTooltip from '../components/InfoTooltip';
+import HelpDialog from '../components/HelpDialog';
 
 const DEFAULT_CONFIG: PlantConfig = {
   electricity_capacity_kw: 1000,
@@ -44,7 +45,21 @@ export default function PlantConfigView() {
   );
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      <HelpDialog title="Plant Configuration Guide">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p><strong>What is this page?</strong></p>
+          <p>This page defines the global physical constraints and settings for your manufacturing plant. The AI Digital Twin uses these values to ensure it never recommends a batch parameter that exceeds what the plant can handle.</p>
+          <p><strong>How to use it:</strong></p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <li><strong>Total Electricity Capacity:</strong> Set the maximum power ceiling for the whole plant. This is the absolute peak allowed.</li>
+            <li><strong>Max Machine Power Limit:</strong> Prevents the AI from suggesting a machine speed/temperature combination that draws too much power on a single unit.</li>
+            <li><strong>Global Carbon Limit & Emission Factor:</strong> Used by the "Energy Saving" and "Balanced" priority modes to strictly limit the CO₂ footprint of a batch.</li>
+            <li><strong>Save Changes:</strong> Click "Save Plant Configuration" to instantly update the AI's constraints. Future optimizations will immediately respect these new limits.</li>
+          </ul>
+        </div>
+      </HelpDialog>
+
       {alert && (
         <div className={`alert alert-${alert.type}`}>
           {alert.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
