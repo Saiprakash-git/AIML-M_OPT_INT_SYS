@@ -66,6 +66,13 @@ app.add_middleware(
 )
 
 # -----------------------------------------------------------------------------
+# Health Check Endpoint (For Keeping Render Free Tier Alive)
+# -----------------------------------------------------------------------------
+@app.get("/")
+def root():
+    return {"message": "API is running", "status": "active"}
+
+# -----------------------------------------------------------------------------
 # Pydantic Schemas for Input Validation
 # -----------------------------------------------------------------------------
 class PlantConfig(BaseModel):
